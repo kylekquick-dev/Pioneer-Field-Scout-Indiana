@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pioneer® Field Scout: Indiana</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#005f2f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Field Scout: IN">
+<!-- Favicons -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<!-- Apple touch icon (home screen) -->
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- iOS splash screens (Add to Home Screen launch images) -->
+<link rel="apple-touch-startup-image" href="splash-iphone.png"
+  media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3)">
+<link rel="apple-touch-startup-image" href="splash-iphone-std.png"
+  media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3)">
+<link rel="apple-touch-startup-image" href="splash-ipad.png"
+  media="(min-device-width:768px) and (orientation:portrait)">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    /* ---- Pioneer Seeds theme ---- */
+    --green-900:#003d22; --green-700:#005f2f; --green-600:#00733a; --green-500:#1a8a4f;
+    --green-100:#e3f1e8; --gold:#f5c400; --gold-dark:#d9a900; --gold-light:#ffd633;
+    --amber:#f5c400; --red:#c0392b; --blue:#2980b9; --purple:#8e44ad;
+    --teal:#16a085; --gray-50:#f6f8f6; --gray-100:#ecefec; --gray-200:#dbe1db;
+    --gray-400:#9aa69a; --gray-600:#566256; --gray-800:#23302a; --shadow:0 2px 10px rgba(0,0,0,.08);
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--gray-50);color:var(--gray-800);line-height:1.5}
+  header{background:linear-gradient(135deg,var(--green-700),var(--green-900));color:#fff;
+  header{background:linear-gradient(135deg,var(--green-700),var(--green-900));color:#fff;
+    padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    box-shadow:var(--shadow);position:sticky;top:0;z-index:50;border-bottom:4px solid var(--gold)}
+    box-shadow:var(--shadow);position:sticky;top:0;z-index:50}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .logo{width:42px;height:42px;background:var(--green-500);border-radius:10px;
+  .brand .logo{width:46px;height:46px;border-radius:11px;overflow:hidden;background:var(--green-900);
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--gold) inset}
+  .brand .logo img{width:100%;height:100%;object-fit:cover}
+  .brand p{font-size:12px;opacity:.85}
+  .admin-box{display:flex;align-items:center;gap:10px;font-size:13px}
+  .admin-badge{background:rgba(255,255,255,.15);padding:6px 12px;border-radius:20px;display:flex;align-items:center;gap:6px}
+  .admin-badge.active{background:var(--amber);color:#3a2c00;font-weight:600}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:#9aa69a;display:inline-block}
+  .sync-dot.live{background:#4caf50;box-shadow:0 0 0 3px rgba(76,175,80,.25)}
+  button{cursor:pointer;font-family:inherit;border:none;border-radius:8px;font-size:14px;transition:.15s}
+  .btn{padding:9px 16px;background:var(--green-600);color:#fff;font-weight:600}
+  .btn:hover{background:var(--green-700)}
+  .btn.gold{background:var(--gold);color:var(--green-900)}
+  .btn.gold:hover{background:var(--gold-dark)}
+  .btn.secondary{background:var(--gray-200);color:var(--gray-800)}
+  .btn.secondary:hover{background:var(--gray-400);color:#fff}
+  .btn.danger{background:var(--red);color:#fff}
+  .btn.small{padding:5px 10px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .tabs{display:flex;gap:4px;background:#fff;padding:0 16px;border-bottom:2px solid var(--gray-200);
+    overflow-x:auto;position:sticky;top:74px;z-index:40}
+  .tab{padding:14px 18px;border:none;background:none;font-size:14px;font-weight:600;color:var(--gray-600);
+    border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:7px}
+  .tab:hover{color:var(--gray-800)}
+  .tab.active{color:var(--green-900);border-bottom-color:var(--gold)}
+  .tab .dot{width:9px;height:9px;border-radius:50%}
+  .tab .count{background:var(--gray-100);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--gray-600)}
+  .cat-disease .dot{background:var(--red)} .cat-insect .dot{background:var(--amber)}
+  .cat-nutrient .dot{background:var(--teal)} .cat-herbicide .dot{background:var(--purple)}
+  .cat-environmental .dot{background:var(--blue)}
+  main{max-width:1200px;margin:0 auto;padding:24px 16px 60px}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  .toolbar h2{font-size:22px;color:var(--green-900)}
+  .toolbar .sub{font-size:13px;color:var(--gray-600)}
+  .search{padding:9px 14px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;width:240px;max-width:60vw}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+  .card{background:#fff;border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--gray-100)}
+  .card .photo{height:190px;background:var(--gray-100);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .card .photo img{width:100%;height:100%;object-fit:cover}
+  .card .photo .ph-empty{color:var(--gray-400);font-size:40px}
+  .card .photo .pill{position:absolute;top:10px;left:10px;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
+  .card .photo .imgcount{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:3px 8px;border-radius:12px}
+  .card .body{padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:8px}
+  .card h3{font-size:16px;color:var(--green-900)}
+  .card .notes{font-size:13px;color:var(--gray-600);flex:1}
+  .attrs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px;margin-top:4px}
+  .attrs .a{display:flex;flex-direction:column}
+  .attrs .a .k{color:var(--gray-400);font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+  .attrs .a .v{color:var(--gray-800);font-weight:600}
+  .card .foot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--gray-100);font-size:11px;color:var(--gray-400)}
+  .card .foot .acts{display:flex;gap:6px}
+  .empty-state{text-align:center;padding:70px 20px;color:var(--gray-400)}
+  .empty-state .ic{font-size:54px;margin-bottom:12px}
+  .overlay{position:fixed;inset:0;background:rgba(20,30,20,.55);display:none;align-items:flex-start;justify-content:center;padding:30px 16px;z-index:100;overflow-y:auto}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop .2s ease}
+  @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal .mhead{padding:18px 22px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center}
+  .modal .mhead h2{font-size:18px;color:var(--green-900)}
+  .modal .mbody{padding:22px;display:flex;flex-direction:column;gap:16px;max-height:70vh;overflow-y:auto}
+  .modal .mfoot{padding:16px 22px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:10px}
+  .close-x{background:none;font-size:22px;color:var(--gray-400);width:34px;height:34px;border-radius:8px}
+  .close-x:hover{background:var(--gray-100)}
+  label{font-size:13px;font-weight:600;color:var(--gray-800);display:block;margin-bottom:5px}
+  input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green-500);box-shadow:0 0 0 3px var(--green-100)}
+  textarea{resize:vertical;min-height:80px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .field{margin:0}
+  .dropzone{border:2px dashed var(--gray-200);border-radius:10px;padding:20px;text-align:center;color:var(--gray-400);cursor:pointer;transition:.15s}
+  .dropzone:hover{border-color:var(--green-500);background:var(--green-100);color:var(--green-700)}
+  .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .thumb{position:relative;width:70px;height:70px;border-radius:8px;overflow:hidden;border:1px solid var(--gray-200)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;width:18px;height:18px;border-radius:50%;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .viewer .gallery{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+  .viewer .gallery img{height:260px;border-radius:10px;cursor:zoom-in}
+  .viewer .det-attrs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .viewer .det-attrs .a{background:var(--gray-50);padding:10px 12px;border-radius:8px}
+  .viewer .det-attrs .a .k{font-size:10px;text-transform:uppercase;color:var(--gray-400);letter-spacing:.4px}
+  .viewer .det-attrs .a .v{font-size:14px;font-weight:600}
+  .viewer .det-notes{background:var(--gray-50);padding:14px;border-radius:10px;font-size:14px;white-space:pre-wrap}
+  .login-hint{font-size:12px;color:var(--gray-400);margin-top:6px}
+  .seg{display:flex;border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;margin-bottom:6px}
+  .seg button{flex:1;padding:9px;background:#fff;color:var(--gray-600);font-weight:600;border-radius:0}
+  .seg button.active{background:var(--green-600);color:#fff}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gray-800);color:#fff;padding:12px 22px;border-radius:30px;font-size:14px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.3s;z-index:400}
+  .toast.show{opacity:1}
+  .imgmodal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:300;padding:30px}
+  .imgmodal.show{display:flex}
+  .imgmodal img{max-width:100%;max-height:100%;border-radius:8px}
+  .readonly-note{background:var(--amber);color:#3a2c00;font-size:12px;padding:8px 14px;border-radius:8px;text-align:center;font-weight:600;margin-bottom:16px;display:none}
+  .readonly-note.show{display:block}
+  #loading{position:fixed;inset:0;background:var(--gray-50);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:500;color:var(--gray-600)}
+  .spinner{width:38px;height:38px;border:4px solid var(--gray-200);border-top-color:var(--green-600);border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .banner{background:#fff3cd;color:#664d03;border:1px solid #ffe69c;padding:14px 18px;border-radius:10px;margin:16px;font-size:14px}
+  @media(max-width:560px){.row,.row3{grid-template-columns:1fr}.viewer .det-attrs{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo"><img src="icon-192.png" alt="Pioneer"></div>
+    <div><h1>Pioneer<span style="color:var(--gold)">&reg;</span> Field Scout: Indiana <span style="font-size:11px;opacity:.75;font-weight:400">Cloud</span></h1>
+      <p>Pioneer Seeds &middot; Crop Scouting &amp; Agronomic Training</p></div>
+  </div>
+  <div class="admin-box">
+    <span class="admin-badge" id="netBadge" title="Network status">🟢 Online</span>
+    <span class="admin-badge" id="pendingBadge" style="display:none;cursor:pointer" onclick="syncPending()" title="Tap to sync">⏳ 0 pending</span>
+    <span class="admin-badge" id="syncBadge"><span class="sync-dot" id="syncDot"></span> Connecting…</span>
+    <span class="admin-badge" id="adminBadge">Not signed in</span>
+    <button class="btn small" id="authBtn" onclick="onAuthBtn()">Sign In</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <div class="readonly-note" id="roNote">🔒 Viewer Mode — read-only. Only the administrator can add or edit observations.</div>
+  <div class="toolbar">
+    <div><h2 id="catTitle">Disease</h2><div class="sub" id="catSub"></div></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input class="search" id="search" placeholder="🔍 Search observations…" oninput="render()">
+      <button class="btn secondary" id="mapBtn" onclick="openMap()">🗺️ Map View</button>
+      <button class="btn secondary" id="pdfBtn" onclick="exportPDF()">📄 Export Handout</button>
+      <button class="btn gold" id="addBtn" onclick="openForm()" style="display:none">�� New Observation</button>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- Add/Edit form -->
+<div class="overlay" id="formOverlay"><div class="modal">
+  <div class="mhead"><h2 id="formTitle">New Observation</h2><button class="close-x" onclick="closeForm()">×</button></div>
+  <div class="mbody">
+    <div class="field"><label>Title / Identification</label><input id="f_title" placeholder="e.g. Gray Leaf Spot — lower canopy"></div>
+    <div class="row">
+      <div class="field"><label>Category</label><select id="f_category">
+        <option value="disease">Disease</option><option value="insect">Insect</option>
+        <option value="nutrient">Nutrient Deficiency</option><option value="herbicide">Herbicide</option>
+        <option value="environmental">Environmental</option></select></div>
+      <div class="field"><label>Severity</label><select id="f_severity">
+        <option>Low</option><option>Moderate</option><option>High</option><option>Severe</option></select></div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Field / Location</label><input id="f_field" placeholder="e.g. North 40"></div>
+      <div class="field"><label>Crop</label><input id="f_crop" placeholder="e.g. Corn"></div>
+      <div class="field"><label>Product / Hybrid</label><input id="f_product" placeholder="e.g. P1234AM"></div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Planting Date</label><input id="f_planting" type="date"></div>
+      <div class="field"><label>Growth Stage</label><input id="f_stage" placeholder="e.g. V8, R2"></div>
+      <div class="field"><label>Scouting Date</label><input id="f_date" type="date"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Scout Name</label><input id="f_scout" placeholder="e.g. Kyle Quick"></div>
+      <div class="field"><label>GPS / Coordinates (lat, lng)</label><input id="f_gps" placeholder="e.g. 41.59, -93.62"></div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Weather Conditions</label><input id="f_weather" placeholder="e.g. 82°F, humid, calm"></div>
+      <div class="field"><label>Accumulated GDU / GDD</label><input id="f_gdd" type="number" placeholder="e.g. 850"></div>
+      <div class="field"><label>Rainfall (last 7d, in)</label><input id="f_rain" placeholder="e.g. 1.2"></div>
+    </div>
+    <div class="field"><label>Agronomic Notes &amp; Training Points</label>
+      <textarea id="f_notes" placeholder="Describe symptoms, scouting tips, ID clues, recommendations, and what trainees should look for…"></textarea></div>
+    <div class="field"><label>Photos</label>
+      <div class="dropzone" onclick="document.getElementById('fileInput').click()">📷 Click to upload field photos (multiple allowed)</div>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="handleFiles(event)">
+      <div class="thumbs" id="thumbs"></div></div>
+  </div>
+  <div class="mfoot">
+    <button class="btn secondary" onclick="closeForm()">Cancel</button>
+    <button class="btn" id="saveBtn" onclick="saveObservation()">Save Observation</button>
+  </div>
+</div></div>
+
+<!-- Detail viewer -->
+<div class="overlay" id="viewOverlay"><div class="modal viewer">
+  <div class="mhead"><h2 id="v_title">Observation</h2><button class="close-x" onclick="closeView()">×</button></div>
+  <div class="mbody" id="v_body"></div><div class="mfoot" id="v_foot"></div>
+</div></div>
+
+<!-- Sign-in modal: admin password OR passwordless viewer magic link -->
+<div class="overlay" id="loginOverlay"><div class="modal" style="max-width:400px">
+  <div class="mhead"><h2>Sign In</h2><button class="close-x" onclick="closeLogin()">×</button></div>
+  <div class="mbody">
+    <div class="seg">
+      <button id="seg_viewer" class="active" onclick="setMode('viewer')">Viewer (no password)</button>
+      <button id="seg_admin" onclick="setMode('admin')">Administrator</button>
+    </div>
+    <div id="viewerPane">
+      <div class="field"><label>Email</label><input id="v_email" type="email" placeholder="you@company.com"></div>
+      <div class="login-hint">We'll email you a secure magic link — no password needed. Click it to view the training library (read-only).</div>
+    </div>
+    <div id="adminPane" style="display:none">
+      <div class="field"><label>Admin Email</label><input id="a_email" type="email" placeholder="kyle.quick@company.com"></div>
+      <div class="field"><label>Password</label><input id="a_pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
+      <div class="login-hint">Administrator access grants full add / edit / delete. Enforced server-side via Row-Level Security.</div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn secondary" onclick="closeLogin()">Cancel</button>
+    <button class="btn" id="loginActionBtn" onclick="doViewerMagic()">Send Magic Link</button>
+  </div>
+</div></div>
+
+<!-- Map modal -->
+<div class="overlay" id="mapOverlay"><div class="modal" style="max-width:880px">
+  <div class="mhead"><h2>🗺��� Field Map</h2><button class="close-x" onclick="closeMap()">×</button></div>
+  <div class="mbody" style="padding:0">
+    <div id="mapLegend" style="display:flex;gap:14px;flex-wrap:wrap;padding:12px 22px;font-size:12px;border-bottom:1px solid var(--gray-200)"></div>
+    <div id="map" style="height:60vh;width:100%"></div>
+    <div id="mapEmpty" style="display:none;padding:50px;text-align:center;color:var(--gray-400)">No observations with GPS coordinates yet.</div>
+  </div>
+  <div class="mfoot"><button class="btn" onclick="closeMap()">Close</button></div>
+</div></div>
+
+<div class="imgmodal" id="imgModal" onclick="this.classList.remove('show')"><img id="imgModalImg" src=""></div>
+<div class="toast" id="toast"></div>
+<div id="loading"><div class="spinner"></div><div id="loadingText">Connecting to Pioneer® Field Scout: Indiana…</div></div>
+
+<script src="config.js"></script>
+<script src="offline.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed', err));
+    });
+  }
+</script>
+</body>
+</html>
